@@ -3,6 +3,7 @@ package com.khaled.talkapp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.webkit.PermissionRequest;
@@ -26,7 +27,14 @@ public class MainActivity extends Activity {
 
         webView = new WebView(this);
         setContentView(webView);
-        WebView.setWebContentsDebuggingEnabled(true); // debug build only — lets chrome://inspect attach for diagnosing WebView-only bugs
+        // Only in a debuggable build: WebView contents debugging lets chrome://inspect
+        // attach for diagnosing WebView-only bugs. Leaving it enabled in a release APK
+        // would let anyone with adb access attach to the WebView and run JS against the
+        // signed-in session. The previous code claimed "debug build only" but never
+        // actually gated it — this enforces that intent.
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
