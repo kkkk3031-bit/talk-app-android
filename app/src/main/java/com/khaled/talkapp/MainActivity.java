@@ -45,9 +45,21 @@ public class MainActivity extends Activity {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 runOnUiThread(() -> {
-                    if (checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                    // The web app only needs the microphone. Grant *only* audio
+                    // capture, and only when it was actually requested and we hold
+                    // RECORD_AUDIO — never blanket-grant request.getResources(),
+                    // which could include camera or other resources we neither have
+                    // an OS permission for nor want to expose to remote web content.
+                    boolean wantsAudio = false;
+                    for (String r : request.getResources()) {
+                        if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r)) {
+                            wantsAudio = true;
+                            break;
+                        }
+                    }
+                    if (wantsAudio && checkSelfPermission(Manifest.permission.RECORD_AUDIO)
                             == PackageManager.PERMISSION_GRANTED) {
-                        request.grant(request.getResources());
+                        request.grant(new String[]{ PermissionRequest.RESOURCE_AUDIO_CAPTURE });
                     } else {
                         request.deny();
                     }
